@@ -19,14 +19,15 @@
  *                        nome utente in navbar: il coordinatore lavora
  *                        da postazione, il nome sta nella riga
  *                        contesto sotto la navbar.
- *   - "volontario"     — solo nome utente sulla destra, `truncate` per
- *                        stare in larghezza su schermi da 320-360px.
- *                        Nessuna voce di navigazione: il ritorno al
- *                        giro esiste come "← Il giro di oggi" nelle
- *                        schermate volontario dove serve, e in mobile
- *                        ogni elemento in più toglie spazio alla lista
- *                        delle persone (il contenuto per cui il
- *                        volontario apre l'app).
+ *   - "volontario"     — nome utente `truncate` a destra + pulsante
+ *                        "Esci" (form POST, stesso pattern del
+ *                        coordinatore). Il ritorno al giro esiste come
+ *                        "← Il giro di oggi" nelle schermate volontario
+ *                        dove serve; l'Esci mancava del tutto — un
+ *                        volontario che aveva chiuso il giro non aveva
+ *                        modo di uscire dalla sessione. Aggiunto
+ *                        2026-08-14. Padding e testo compatti per non
+ *                        rubare spazio al nome su schermi da 320 px.
  *
  * Logo — destinazione per ruolo (non hardcoded /{slug}):
  *   pubblica    → /{slug}
@@ -57,6 +58,11 @@ import clsx from "clsx";
 import { IconaSole } from "@/components/icona-sole";
 
 export type RuoloNavbar = "pubblica" | "login" | "coordinatore" | "volontario";
+// `pubblica` marca la home del comune (`/{slug}`), non una sezione:
+// evidenzia la voce "Home" nella navbar. Le sezioni sono
+// `metodo`/`servizi`/`faq`. `login` evidenzia l'icona utente.
+// Nessun valore per "Comuni" (/): la Navbar non si monta su quella
+// pagina — c'è NavbarLanding.
 export type VocePubblica = "pubblica" | "metodo" | "servizi" | "faq" | "login";
 
 interface Props {
@@ -125,8 +131,16 @@ const IconaHamburger = ({ className = "" }: { className?: string }) => (
 );
 
 function VoceLink({
-  href, corrente, children,
-}: { href: string; corrente: boolean; children: React.ReactNode }) {
+  href, corrente, children, className,
+}: {
+  href: string;
+  corrente: boolean;
+  children: React.ReactNode;
+  /** Classi extra sul contenitore, usate per spaziature che non fanno
+   *  parte del pattern base (es. `ml-4` per staccare "Comuni" dal
+   *  gruppo delle voci di sezione). */
+  className?: string;
+}) {
   return (
     <Link
       href={href}
@@ -136,6 +150,7 @@ function VoceLink({
         corrente
           ? "text-ink bg-foot"
           : "text-slate hover:text-ink hover:bg-foot/60",
+        className,
       )}
     >
       {children}
@@ -179,7 +194,20 @@ function Logo({
 }
 
 /** Voci desktop + hamburger mobile per il ruolo pubblica. Estratta per
- *  non ingombrare il render principale con 60 righe di menu. */
+ *  non ingombrare il render principale con 60 righe di menu.
+ *
+ *  Ordine (deciso 2026-08-14):
+ *    [Home] [Metodo] [Servizi] [FAQ]     [Comuni] [icona login]
+ *
+ *  Home è la voce testuale che porta alla home del comune (`/{slug}`) —
+ *  aggiunta perché il logo cliccabile era l'unico modo per tornarci da
+ *  `/metodo`, `/servizi`, `/faq` e non era discoverable.
+ *
+ *  Comuni è staccata in fondo, prima dell'icona login, e porta a `/`
+ *  (scelta del comune, home del progetto). Staccata perché due voci
+ *  adiacenti che portano entrambe a una "casa" si confonderebbero
+ *  (Home = casa del comune, Comuni = casa del progetto). Il gap è
+ *  `ml-4` desktop / `border-t` mobile. */
 function VociPubbliche({
   slugComune,
   voceCorrente,
@@ -187,10 +215,15 @@ function VociPubbliche({
   slugComune: string;
   voceCorrente: VocePubblica | undefined;
 }) {
+  // Voci del comune (Home + sezioni). Contigue nel gruppo `voci`.
+  // Home usa `voceCorrente === "pubblica"`: quando la Navbar è resa
+  // dalla home del comune (dove il valore è "pubblica"), la voce
+  // Home è quella evidenziata.
   const voci = [
-    { id: "metodo",  href: `/${slugComune}/metodo`,  label: "Metodo"  },
-    { id: "servizi", href: `/${slugComune}/servizi`, label: "Servizi" },
-    { id: "faq",     href: `/${slugComune}/faq`,     label: "FAQ"     },
+    { id: "pubblica", href: `/${slugComune}`,         label: "Home"    },
+    { id: "metodo",   href: `/${slugComune}/metodo`,  label: "Metodo"  },
+    { id: "servizi",  href: `/${slugComune}/servizi`, label: "Servizi" },
+    { id: "faq",      href: `/${slugComune}/faq`,     label: "FAQ"     },
   ] as const;
   const hrefLogin = `/${slugComune}/login`;
   return (
@@ -204,6 +237,13 @@ function VociPubbliche({
             {v.label}
           </VoceLink>
         ))}
+        {/* "Comuni" → home del progetto (/). Mai `corrente` qui: questa
+            Navbar non si monta su `/`, dove vive NavbarLanding. `ml-4`
+            crea la separazione visiva richiesta col gruppo delle voci
+            del comune sopra. */}
+        <VoceLink href="/" corrente={false} className="ml-4">
+          Comuni
+        </VoceLink>
         <Link
           href={hrefLogin}
           aria-label="Accedi"
@@ -246,6 +286,15 @@ function VociPubbliche({
               {v.label}
             </Link>
           ))}
+          {/* Comuni separata dal gruppo del comune con `border-t mt-1`,
+              stesso pattern usato sotto per Accedi. Sui mobile la
+              distanza visiva ne rimarca la semantica diversa. */}
+          <Link
+            href="/"
+            className="block px-4 py-2 text-[14px] font-display font-semibold no-underline border-t border-rule mt-1 text-slate hover:text-ink hover:bg-foot/60"
+          >
+            Comuni
+          </Link>
           <Link
             href={hrefLogin}
             aria-current={voceCorrente === "login" ? "page" : undefined}
@@ -299,17 +348,33 @@ function VociCoordinatore() {
   );
 }
 
-/** Nome del volontario allineato a destra, `truncate` su schermi
- *  stretti. `min-w-0 flex-1` lo lascia restringere invece di forzare
- *  il logo a wrappare. */
+/** Nome del volontario allineato a destra + pulsante Esci compatto.
+ *  Il nome usa `min-w-0 truncate` per restringersi invece di forzare
+ *  il logo a wrappare su 320 px. Il pulsante Esci ha `shrink-0` così
+ *  resta intero: se il nome è lungo, è il nome che si accorcia con
+ *  ellissi, non l'azione a sparire. Il pulsante è un form POST verso
+ *  /logout (stesso motivo del coordinatore: GET sarebbe prefetchato). */
 function NomeVolontario({ nome }: { nome: string }) {
   return (
-    <span
-      className="ml-auto min-w-0 text-slate text-[13px] font-medium truncate"
-      title={nome}
-    >
-      {nome}
-    </span>
+    <div className="ml-auto flex items-center gap-2 min-w-0">
+      <span
+        className="min-w-0 text-slate text-[13px] font-medium truncate"
+        title={nome}
+      >
+        {nome}
+      </span>
+      <form action="/logout" method="POST" className="shrink-0">
+        <button
+          type="submit"
+          className={clsx(
+            "px-2 py-1 rounded-btn text-[13px] font-display font-semibold no-underline transition-colors whitespace-nowrap",
+            "text-slate hover:text-ink hover:bg-foot/60",
+          )}
+        >
+          Esci
+        </button>
+      </form>
+    </div>
   );
 }
 

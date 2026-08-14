@@ -27,7 +27,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Masthead } from "@/components/masthead";
+import { Navbar } from "@/components/navbar";
 import { sql } from "@/lib/db";
 import { risolviComune } from "@/lib/comuni";
 import { attributiMetodo } from "@/lib/comuni-metodo";
@@ -113,17 +113,26 @@ export default async function Metodo({
     ) : undefined;
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <Masthead sottotitolo="Come calcoliamo il livello di allerta" />
-
-      <p className="mt-5 text-[14px] leading-relaxed text-ink max-w-prose">
-        <Link
-          href={`/${slugComune}`}
-          className="underline text-slate hover:text-ink"
-        >
-          Torna alla pagina pubblica di {nomeComune}
-        </Link>
-      </p>
+    <>
+      {/* 2026-08-14 — allineata alle sorelle /servizi /faq: usa Navbar
+          (Home | Metodo | Servizi | FAQ | Comuni + login). Prima usava
+          Masthead (solo testo "CheCaldo!" + sottotitolo) senza voci
+          di navigazione: da /metodo l'unica via era un link inline in
+          prosa "Torna alla pagina pubblica di X", niente verso /. Il
+          sottotitolo "Come calcoliamo il livello di allerta" è
+          diventato l'<h1> vero della pagina (più corretto
+          semanticamente — CheCaldo! è il sito, non il titolo della
+          pagina). */}
+      <Navbar
+        ruolo="pubblica"
+        nomeComune={nomeComune}
+        slugComune={slugComune}
+        voceCorrente="metodo"
+      />
+      <div className="max-w-3xl mx-auto py-8 px-4">
+        <h1 className="font-display font-bold text-h2 text-ink mb-6">
+          Come calcoliamo il livello di allerta
+        </h1>
 
       {ramo === "bollettino" ? (
         // RAMO BOLLETTINO: sostituisce sia il vecchio banner sia
@@ -226,7 +235,8 @@ export default async function Metodo({
           ← Torna alla pagina pubblica di {nomeComune}
         </Link>
       </p>
-    </div>
+      </div>
+    </>
   );
 }
 

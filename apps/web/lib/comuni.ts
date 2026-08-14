@@ -2,7 +2,7 @@
  * Lookup dei comuni serviti da questa istanza.
  *
  * Un'istanza serve **più comuni** (§12t routing per path). Il selettore
- * della radice, i link masthead/footer, e la validazione dei path
+ * della radice, i link navbar/footer, e la validazione dei path
  * `/[comune]` usano tutti questa lookup.
  *
  * Aggiungere un comune = aggiungere una riga a `COMUNI`. Se in futuro
