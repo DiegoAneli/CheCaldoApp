@@ -16,7 +16,7 @@
  * proxy (basic auth in Caddyfile).
  *
  * §12aaaaaa (2026-08-12) — sostituiti gli elenchi verticali di link con
- * due `<form GET>` che puntano alle route `entra`/`entra-coordinatore`
+ * due `<form>` che puntano alle route `entra`/`entra-coordinatore`
  * esistenti, ciascuno con un `<select>` + `<button>` submit. Motivi
  * (dal brief): con 12 volontari l'elenco a riquadri occupava tutta la
  * pagina e costringeva a scorrere; il coordinatore resta separato
@@ -25,13 +25,16 @@
  * query (`packages/db/src/query.ts`) — vedi commento sopra
  * `volontariDellOrganizzazione`.
  *
- * Perché `<form action="/entra">` senza JavaScript. La route
- * `entra/[id]` accetta id in path, non in querystring; per usarla da
- * un `<form>` GET servirebbe un handler client che costruisce l'URL.
- * Preferisco tenere il flusso server-only: `action="/{slug}/entra"`
- * accetta l'`id` come querystring (`?id=…`), la route parsifica prima
- * i path params, se manca il segmento path prova il queryparam. Vedi
- * `route.ts` di entra/entra-coordinatore per la modifica minima.
+ * Perché `<form method="POST">` senza JavaScript. Le route
+ * `entra`/`entra-coordinatore` sono POST-only: il vecchio GET era
+ * prefetchabile e in `IngressoDiretto` — dove il pulsante era un
+ * `<Link>` diretto a `.../{id}` — il cookie veniva impostato al
+ * passaggio del mouse. La variante `/[id]` è stata rimossa: l'id
+ * arriva sempre nel body (`<select name="id">` per SceltaUtente,
+ * `<input type="hidden" name="id">` per IngressoDiretto), un solo
+ * handler POST per ruolo. La difesa d'appartenenza sull'id vive lì
+ * (verifica contro `volontari/coordinatoriDellOrganizzazione`
+ * dell'org risolta dallo slug), invariante §12u preservata.
  *
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
@@ -97,7 +100,8 @@ export default async function LoginPerComune({
             <IngressoDiretto
               titolo="Coordinatore"
               nome={coordinatori[0].nome}
-              href={`/${slug}/entra-coordinatore/${coordinatori[0].id}`}
+              action={`/${slug}/entra-coordinatore`}
+              id={coordinatori[0].id}
               testoBottone="Entra come coordinatore"
             />
           ) : coordinatori.length > 1 ? (
@@ -135,16 +139,20 @@ export default async function LoginPerComune({
 
 /**
  * Ingresso diretto quando c'è un solo utente in una categoria (tipico
- * per il coordinatore: uno per organizzazione — vedi seed). Un pulsante
- * link che punta direttamente a /{slug}/entra-coordinatore/{id}. Nessun
- * `<select>` intermedio.
+ * per il coordinatore: uno per organizzazione — vedi seed). Form POST
+ * con id in `<input type="hidden">`. Nessun `<select>` intermedio.
+ * Il `<form>` non è prefetchabile — la scelta strutturale che
+ * distingue questa versione da quella pre-POST, dove un <Link href>
+ * al path con id veniva prefetchato al hover e impostava il cookie
+ * senza click. Il pulsante mantiene aspetto identico.
  */
 function IngressoDiretto({
-  titolo, nome, href, testoBottone,
+  titolo, nome, action, id, testoBottone,
 }: {
   titolo: string;
   nome: string;
-  href: string;
+  action: string;
+  id: number;
   testoBottone: string;
 }) {
   return (
@@ -152,23 +160,28 @@ function IngressoDiretto({
       <h2 className="font-display font-semibold text-[11.5px] tracking-label uppercase text-muted mb-2">
         {titolo}
       </h2>
-      <div className="border border-rule rounded-card bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-3  border-gray-400">
+      <form
+        method="POST"
+        action={action}
+        className="border border-rule rounded-card bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-3  border-gray-400"
+      >
         <div className="flex-1 min-w-0 text-[14px] text-ink">{nome}</div>
-        <Link
-          href={href}
+        <input type="hidden" name="id" value={id} />
+        <button
+          type="submit"
           className="bg-ink text-white px-4 py-2 rounded-btn font-display font-semibold text-[13px] shrink-0 no-underline text-center"
         >
           {testoBottone}
-        </Link>
-      </div>
+        </button>
+      </form>
     </section>
   );
 }
 
 /**
- * Blocco `<form GET>` con `<select>` + `<button>` submit. La route
- * `action` accetta l'id come querystring (`?id=N`). Ordine delle opzioni
- * come restituito dalla query (naturale, non lessicografico). `required`
+ * Blocco `<form POST>` con `<select>` + `<button>` submit. La route
+ * `action` legge l'id da `FormData`. Ordine delle opzioni come
+ * restituito dalla query (naturale, non lessicografico). `required`
  * previene l'invio senza selezione; il `defaultValue=""` con opzione
  * disabled iniziale evita che la prima voce sia preselezionata a caso.
  */
@@ -186,7 +199,7 @@ function SceltaUtente({
         {titolo}
       </h2>
       <form
-        method="GET"
+        method="POST"
         action={action}
         className="border border-rule rounded-card bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-3  border-gray-400"
       >

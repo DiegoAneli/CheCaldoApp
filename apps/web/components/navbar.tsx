@@ -278,12 +278,23 @@ function VociCoordinatore() {
       <VoceLink href="/coordinatore/volontari" corrente={false}>
         Volontari
       </VoceLink>
-      {/* /logout è una GET route che cancella entrambi i cookie
-          (checaldo_coordinatore_id + checaldo_volontario_id) e
-          redirige a /. Vedi apps/web/app/logout/route.ts. */}
-      <VoceLink href="/logout" corrente={false}>
-        Esci
-      </VoceLink>
+      {/* /logout è POST, non GET: il prefetch di Next.js (e di ogni
+          crawler o link preview) su un <Link href="/logout"> eseguiva
+          l'handler e cancellava i cookie al passaggio del mouse.
+          Il <form> nativo non è prefetchabile; il <button> stilato
+          come le altre voci mantiene aspetto e comportamento della
+          navbar. Vedi apps/web/app/logout/route.ts. */}
+      <form action="/logout" method="POST">
+        <button
+          type="submit"
+          className={clsx(
+            "px-3 py-1.5 rounded-btn text-[13.5px] font-display font-semibold no-underline transition-colors",
+            "text-slate hover:text-ink hover:bg-foot/60",
+          )}
+        >
+          Esci
+        </button>
+      </form>
     </nav>
   );
 }
