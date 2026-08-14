@@ -1,0 +1,54 @@
+# Caddyfile — reverse proxy HTTPS per CheCaldo!
+#
+# {$DOMINIO} è sostituito da Caddy con la variabile d'ambiente all'avvio.
+# Non serve indicare la porta 443: se il site address contiene un nome di
+# host, Caddy attiva HTTPS Let's Encrypt automatico.
+#
+# Vale per qualunque dominio pubblico che risolva al VPS, inclusi
+# sottodomini DuckDNS (checaldo-parma.duckdns.org, ecc.). Nessuna
+# configurazione DNS particolare richiesta da Caddy — basta il record A/AAAA.
+#
+# Nessun controllo di accesso: l'istanza dimostrativa è ad accesso libero
+# per scelta (dati delle persone sintetici, banda "dati sintetici"
+# visibile su ogni vista). Chi installa CheCaldo! su un'anagrafe reale
+# deve reintrodurre qui un basic auth (o un OIDC davanti) sulle rotte
+# `/coordinatore/*` e `/volontario/*` prima di aprire il dominio a
+# Internet.
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+{
+    # Email per Let's Encrypt (avvisi di scadenza, incidenti).
+    email {$LETSENCRYPT_EMAIL}
+}
+
+{$DOMINIO} {
+    encode gzip zstd
+
+    # Rate limit sulle rotte MVT (protezione minimale — le vector tiles
+    # sono cacheable ma un abusatore può cercare di scaricare tutto).
+    # Caddy senza plugin non ha un rate limit built-in; se serve, va
+    # aggiunto un modulo (github.com/mholt/caddy-ratelimit) in un'immagine
+    # custom. Per ora si lascia scoperto — è vector tile pubblico, un
+    # rischio limitato per la demo.
+
+    # Header di sicurezza standard.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "same-origin"
+        # NB: nessun CSP restrittivo qui — Next.js e MapLibre caricano
+        # asset da basemaps.cartocdn.com e da self. Un CSP mal scritto
+        # rompe la pagina. Se serve aggiungerlo, testare in staging.
+    }
+
+    reverse_proxy web:3000 {
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

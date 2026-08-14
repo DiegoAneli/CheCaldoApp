@@ -1,0 +1,50 @@
+node_modules/
+.next/
+dist/
+*.tsbuildinfo
+.pnpm-store/
+
+# Dati: niente file reali nel repository, mai.
+# Se un dato personale entra nella history di git, non esce piu'.
+*.csv
+*.xlsx
+*.xls
+*.zip
+*.shp
+*.dbf
+*.shx
+*.prj
+*.gpkg
+/data/
+/fixtures/generated/
+/uploads/
+
+# Scarto dell'ingestione: overpass-raw*.json è l'export grezzo da Overpass
+# Turbo, input dello script estrai-vie.ts. L'output (vie-{slug}.json) resta
+# versionato perche' letto a runtime dal generatore sintetico dentro
+# l'immagine di produzione (packages/fixtures/src/generatore.ts riga 338).
+/packages/fixtures/data/overpass-raw*.json
+
+# Eccezioni: fixture sintetiche e lookup pubbliche, versionate di proposito
+!packages/scoring/test/parma-sezioni.json
+!packages/**/fixtures/*.sintetico.csv
+
+.env
+.env.*
+!.env.example
+!.env.production.example
+.DS_Store
+
+# Artefatti di codegen: sorgente unico versionato, output rigenerabile.
+*.generated.ts
+
+# Ambiente locale e IDE
+.claude/
+.idea/
+.vscode/
+Thumbs.db
+/web/
+*.md
+!README.md
+!packages/agents/prompts/*.md
+

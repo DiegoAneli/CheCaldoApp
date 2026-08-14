@@ -1,0 +1,29 @@
+{
+  "name": "@checaldo/agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "src/index.ts",
+  "scripts": {
+    "codegen-prompt": "tsx scripts/genera-prompt.ts",
+    "test": "tsx --test test/*.test.ts",
+    "pretypecheck": "pnpm codegen-prompt",
+    "typecheck": "tsc --noEmit",
+    "pretest-consulente": "pnpm codegen-prompt",
+    "test-consulente": "tsx scripts/test-consulente.ts",
+    "pretest-allerta-citta": "pnpm codegen-prompt",
+    "test-allerta-citta": "tsx scripts/test-allerta-citta.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30",
+    "@checaldo/db": "workspace:*",
+    "@checaldo/scoring": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4",
+    "typescript": "^5",
+    "@types/node": "^22",
+    "postgres": "^3",
+    "dotenv": "^16"
+  }
+}

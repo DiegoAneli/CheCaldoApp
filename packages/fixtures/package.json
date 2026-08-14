@@ -1,0 +1,25 @@
+{
+  "name": "@checaldo/fixtures",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "seed": "tsx src/generatore.ts",
+    "estrai-vie": "tsx scripts/estrai-vie.ts",
+    "carica": "tsx scripts/carica-nel-db.ts",
+    "genera-contatti-storici": "tsx scripts/genera-contatti-storici.ts",
+    "carica-punti-freschi": "tsx scripts/carica-punti-freschi.ts",
+    "carica-punti-freschi-bologna": "tsx scripts/carica-punti-freschi-bologna.ts",
+    "rigenera-sezioni": "tsx scripts/rigenera-sezioni.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4",
+    "@faker-js/faker": "^9",
+    "csv-parse": "^5",
+    "postgres": "^3"
+  },
+  "dependencies": {
+    "@checaldo/db": "workspace:*",
+    "@checaldo/scoring": "workspace:*"
+  }
+}

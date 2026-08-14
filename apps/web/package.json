@@ -1,0 +1,37 @@
+{
+  "name": "@checaldo/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "//maplibre-gl": "PIN A ^4: la 6.1.0 non completa il caricamento dello style Positron (isStyleLoaded resta false, load non scatta, la coropleta non disegna) e computa un centro sbagliato. Downgrade a v4 risolve entrambi. Diagnosi in CHECALDO-PROGETTO.md §12i. Non salire a 5.x o 6.x senza rifare la verifica end-to-end mappa in browser.",
+  "scripts": {
+    "predev": "pnpm --filter @checaldo/agents codegen-prompt",
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "prebuild": "pnpm --filter @checaldo/agents codegen-prompt",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "pretypecheck": "pnpm --filter @checaldo/agents codegen-prompt",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@checaldo/agents": "workspace:*",
+    "@checaldo/db": "workspace:*",
+    "@checaldo/scoring": "workspace:*",
+    "@fontsource/ibm-plex-mono": "^5",
+    "clsx": "^2",
+    "maplibre-gl": "^4.7.1",
+    "next": "^15",
+    "postgres": "^3",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10",
+    "postcss": "^8",
+    "tailwindcss": "^3",
+    "typescript": "^5"
+  }
+}

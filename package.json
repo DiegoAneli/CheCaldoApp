@@ -1,0 +1,15 @@
+{
+  "name": "checaldo",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @checaldo/web dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "seed": "pnpm --filter @checaldo/fixtures seed"
+  }
+}

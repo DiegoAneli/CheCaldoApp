@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Favicon. Convention App Router: file `app/icon.svg`, Next.js lo espone
+  come `/icon.svg` e inserisce `<link rel="icon">` in head automaticamente
+  (nessuna modifica a `layout.tsx`). Il loader di metadata immagini di
+  Next fallisce se il commento sta fuori dal tag `<svg>` (l'ho colpito la
+  prima volta): tenere il commento QUI dentro, non prima del root.
+
+  Colore: `#FF7F02` = `lv2` in tailwind.config.ts, lo stesso arancione che
+  `IconaSole` usa in navbar (`text-lv2`) — favicon e logo parlano la
+  stessa lingua. Arancione saturo con luminanza intermedia, resta
+  visibile su tab a tema chiaro e a tema scuro.
+
+  Nota semantica accettata consapevolmente. Nell'app `lv2` è il colore
+  del livello di allerta 2 (arancione, "attenzione"); come favicon smette
+  di essere stato e diventa identità del sito. Se un giorno qualcuno
+  vede il quadrato arancione nella scheda e lo legge come "allerta in
+  corso" invece che come "CheCaldo!", la ragione è questa: scelta di
+  coerenza col brand del logo, non un errore.
+
+  Forma piena con sole in negativo (bianco) invece di sole arancione su
+  trasparente: a 16 px in una barra di schede affollata un blocco
+  continuo di colore si riconosce a distanza; un contorno sottile si
+  perde contro le texture di tab non uniformi. viewBox 32×32 così le
+  misure sono numeri interi comodi. Niente `stroke-linecap="round"` sui
+  raggi — a 16 px arrotonderebbe troppo, mangiando la punta.
+--><rect width="32" height="32" rx="5" fill="#FF7F02"/><circle cx="16" cy="16" r="5" fill="#FFFFFF"/><g stroke="#FFFFFF" stroke-width="2.5"><line x1="16" y1="3" x2="16" y2="7"/><line x1="16" y1="25" x2="16" y2="29"/><line x1="3" y1="16" x2="7" y2="16"/><line x1="25" y1="16" x2="29" y2="16"/><line x1="22.5" y1="9.5" x2="25.5" y2="6.5"/><line x1="22.5" y1="22.5" x2="25.5" y2="25.5"/><line x1="9.5" y1="22.5" x2="6.5" y2="25.5"/><line x1="9.5" y1="9.5" x2="6.5" y2="6.5"/></g></svg>

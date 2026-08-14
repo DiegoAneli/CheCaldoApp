@@ -1,0 +1,11 @@
+{
+  "name": "@checaldo/scoring",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "src/index.ts",
+  "scripts": { "test": "tsx --test test/*.test.ts" },
+  "devDependencies": {
+    "tsx": "^4"
+  }
+}

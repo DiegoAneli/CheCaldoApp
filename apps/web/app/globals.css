@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Font locali (nessun fetch da Google Fonts, la build in container non li
+   raggiunge). §12aaa: rimossi anche gli import @fontsource/archivo —
+   ora sia display sia body sono Google Sans (wght 400-700 + italic
+   coprono tutti gli usi correnti: font-semibold=600, font-bold=700,
+   italic sullo slogan home + etichette AI Act). */
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+/* Google Sans variable — testo corrente (§12zz).
+   File sottoinsieme latin+latin-ext generati da
+   packages/ingest/converti_google_sans.py da TTF ufficiali Google Sans
+   (SIL Open Font License 1.1, `OFL.txt` in public/fonts/).
+   Peso: 116 KB regular + 121 KB italic (era 4.7 + 5.1 MB TTF).
+   Assi variabili:
+     - wght: 400-700 (dichiarato in font-weight range)
+     - opsz: 17-18 (range minimo, default 18 va bene, lasciato al
+       browser via `font-optical-sizing: auto` default)
+     - GRAD: -50-200 (no equivalente CSS standard, lasciato al default)
+   `font-display: swap` per non bloccare il render — il fallback
+   system-ui compare fino al caricamento. */
+@font-face {
+  font-family: "Google Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/google-sans.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Google Sans";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/google-sans-italic.woff2") format("woff2-variations");
+}
+
+/* Palette dal prototipo. Duplico anche come CSS variables per accesso
+   diretto da CSS raw (es. animazioni, gradiente barra livello). */
+:root {
+  --ink:   #16202B;
+  --paper: #EAEEF2;
+  --card:  #FFFFFF;
+  --slate: #5A6875;
+  --muted: #8B98A4;
+  --rule:  #DBE2E8;
+  --lv0:   #5BD601;
+  --lv1:   #E4D603;
+  --lv2:   #FF7F02;
+  --lv3:   #DC2A17;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Google Sans", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, .dsp {
+  font-family: "Google Sans", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+/* Focus visibile su tutto ciò che è interattivo. */
+button:focus-visible, a:focus-visible, [role="radio"]:focus-visible, input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

@@ -1,0 +1,182 @@
+# Tutto gira in container. Sulla macchina serve solo Docker.
+#
+#   docker compose up -d postgis            avvia il database
+#   docker compose run --rm node pnpm ...   qualunque comando Node
+#   docker compose run --rm ingest py ...   qualunque comando Python
+#   docker compose --profile app up         avvia web e worker (da MOD03)
+
+services:
+
+  postgis:
+    image: postgis/postgis:16-3.4
+    # §12yyyy — TZ Europe/Rome (opzione A di §12vvvv). `TZ` sull'ambiente
+    # non basta su un volume già inizializzato: l'immagine postgres scrive
+    # `timezone = 'UTC'` in `postgresql.conf` durante initdb e non lo
+    # rilegge dall'env. Su un cluster fresco `TZ` funzionerebbe da solo;
+    # per coprire anche cluster esistenti forziamo via CLI con `-c
+    # timezone=... -c log_timezone=...` che sovrascrive postgresql.conf.
+    # Verifica: `SHOW timezone` deve rispondere `Europe/Rome`.
+    environment:
+      POSTGRES_USER: checaldo
+      POSTGRES_PASSWORD: checaldo
+      POSTGRES_DB: checaldo
+      TZ: Europe/Rome
+    command:
+      - postgres
+      - -c
+      - timezone=Europe/Rome
+      - -c
+      - log_timezone=Europe/Rome
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # schema.sql si applica da solo alla prima inizializzazione del volume.
+      - ./packages/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checaldo"]
+      interval: 5s
+      retries: 12
+
+  # Comandi Node one-shot: install, test, typecheck.
+  #
+  # I node_modules stanno in volumi nominati, non sul bind mount: i binari
+  # nativi compilati per Linux dentro il container non devono finire sul
+  # filesystem Windows. Se un package.json nuovo compare in un'altra
+  # cartella, aggiungi il suo volume qui.
+  #
+  # `image:` esplicito (§12bbbbbb) — senza, docker compose deriverebbe il tag
+  # da <progetto>-<servizio> = `checaldoapp-node`, che è lo stesso nome che
+  # la compose di produzione userebbe per il suo servizio `node` (target
+  # `cron` di web.Dockerfile). Il tag verrebbe sovrascritto dall'ultimo
+  # `build`. Vedi §12hhhhh (incidente 2026-08-11) e §12bbbbbb (chiusura).
+  node:
+    build: { context: ., dockerfile: docker/node.Dockerfile }
+    image: checaldoapp-dev-node
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://checaldo:checaldo@postgis:5432/checaldo
+      TZ: Europe/Rome
+    volumes:
+      - .:/app
+      - nm_root:/app/node_modules
+      - nm_scoring:/app/packages/scoring/node_modules
+      - nm_fixtures:/app/packages/fixtures/node_modules
+      - nm_db:/app/packages/db/node_modules
+      - nm_agents:/app/packages/agents/node_modules
+      - nm_web:/app/apps/web/node_modules
+      - nm_worker:/app/apps/worker/node_modules
+      - pnpm_store:/pnpm
+    depends_on:
+      postgis: { condition: service_healthy }
+
+  # Comandi Python one-shot.
+  ingest:
+    build: { context: ., dockerfile: docker/ingest.Dockerfile }
+    image: checaldoapp-dev-ingest
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://checaldo:checaldo@postgis:5432/checaldo
+      TZ: Europe/Rome
+    volumes:
+      - .:/app
+    depends_on:
+      postgis: { condition: service_healthy }
+
+  # Da MOD03. Fuori dal profilo predefinito perche' apps/web non esiste ancora.
+  #
+  # `image: checaldoapp-dev-web` esplicito (§12bbbbbb). Senza, docker compose
+  # deriverebbe `checaldoapp-web`, stesso tag della compose di produzione
+  # (che punta a `docker/web.Dockerfile target: runner`, con NODE_ENV=production
+  # baked). L'ultima build vince e sovrascrive l'altra: è l'incidente §12hhhhh
+  # del 2026-08-11 (immagine di prod finita nel tag di dev, otto ore in modalità
+  # sbagliata). I due file dichiarano ora nomi distinti.
+  web:
+    profiles: ["app"]
+    build: { context: ., dockerfile: docker/node.Dockerfile }
+    image: checaldoapp-dev-web
+    command: pnpm --filter @checaldo/web dev
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://checaldo:checaldo@postgis:5432/checaldo
+      HOSTNAME: 0.0.0.0
+      TZ: Europe/Rome
+      # Difesa in profondità (§12bbbbbb). La causa del vecchio incidente
+      # (§12hhhhh) è chiusa dalla separazione dei tag `checaldoapp-dev-*` vs
+      # `checaldoapp-prod-*`. Questa riga resta come cintura di sicurezza: se
+      # qualcuno costruisce con un nome di progetto diverso o riscrive
+      # manualmente il tag, il container dev continua a girare in development
+      # a prescindere da cosa l'immagine porta baked.
+      NODE_ENV: development
+      # §12ggggg — TTS interno. Se assente, le route /api/tts/*
+      # ritornano 503 e il client cade sul fallback Web Speech
+      # (§12fffff BLOCCO B); la voce non sparisce mai.
+      TTS_URL: http://tts:8080
+    ports: ["3000:3000"]
+    volumes:
+      - .:/app
+      - nm_root:/app/node_modules
+      - nm_scoring:/app/packages/scoring/node_modules
+      - nm_fixtures:/app/packages/fixtures/node_modules
+      - nm_db:/app/packages/db/node_modules
+      # nm_agents serve al predev del web (codegen-prompt in packages/agents
+      # ha bisogno di tsx). Aggiunto quando MOD06 ha reso il web dipendente
+      # dal codegen degli agenti.
+      - nm_agents:/app/packages/agents/node_modules
+      - nm_web:/app/apps/web/node_modules
+      - pnpm_store:/pnpm
+    depends_on:
+      postgis: { condition: service_healthy }
+
+  # Da §12ggggg. Servizio TTS Piper persistente per la sintesi vocale
+  # dei testi generati dagli agenti. Il modello vive dentro l'immagine
+  # (scaricato al build) ed è caricato una volta al boot del container:
+  # a modello caldo la sintesi costa ~0.5-2 s (contro i 30-60 s del
+  # container effimero della prova §12fffff che pagava il caricamento
+  # ogni volta). Nessun `ports:` esposto — solo la rete interna del
+  # compose lo raggiunge; il web lo chiama via `http://tts:8080/synth`.
+  # Healthcheck curl su /health così `depends_on` del web sa quando
+  # il modello ha finito di caricarsi (30-60 s a freddo).
+  tts:
+    profiles: ["app"]
+    build: { context: ., dockerfile: docker/tts.Dockerfile }
+    image: checaldoapp-dev-tts
+    environment:
+      TZ: Europe/Rome
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sfS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 6
+
+  # Da MOD06. Cron: poller bollettino e job triage segnalazioni.
+  worker:
+    profiles: ["app"]
+    build: { context: ., dockerfile: docker/node.Dockerfile }
+    image: checaldoapp-dev-worker
+    command: pnpm --filter @checaldo/worker start
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://checaldo:checaldo@postgis:5432/checaldo
+      TZ: Europe/Rome
+    volumes:
+      - .:/app
+      - nm_root:/app/node_modules
+      - nm_scoring:/app/packages/scoring/node_modules
+      - nm_db:/app/packages/db/node_modules
+      - nm_agents:/app/packages/agents/node_modules
+      - nm_worker:/app/apps/worker/node_modules
+      - pnpm_store:/pnpm
+    depends_on:
+      postgis: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  nm_root:
+  nm_scoring:
+  nm_fixtures:
+  nm_db:
+  nm_agents:
+  nm_web:
+  nm_worker:
+  pnpm_store:

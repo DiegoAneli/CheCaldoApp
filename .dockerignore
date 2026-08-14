@@ -1,0 +1,52 @@
+# Contesto Docker: escludi artefatti e volumi che non devono finire nell'immagine.
+# I Dockerfile ricostruiscono le dipendenze e il build da zero — quello che è
+# sul disco dell'host non partecipa.
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# node_modules — installati dentro l'immagine da pnpm install nel builder stage.
+# Se ne portassimo copia dal disco, rischieremmo binari nativi compilati per
+# l'host (Windows/macOS) dentro un container Linux.
+**/node_modules
+
+# Next build cache locale — rigenerata dal builder stage.
+apps/web/.next
+apps/web/tsconfig.tsbuildinfo
+
+# pnpm store locale.
+.pnpm-store
+
+# Git — non serve nell'immagine di runtime.
+.git
+.gitignore
+.gitattributes
+
+# Ambiente locale — la chiave Anthropic e i segreti NON devono entrare nell'immagine.
+# Il compose li passa via env_file/environment a runtime.
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Dati locali (in .gitignore comunque, ma esplicito per il contesto docker).
+data/
+fixtures/generated/
+uploads/
+
+# Artefatti di codegen (in .gitignore, rigenerati dal prebuild hook nel builder).
+*.generated.ts
+
+# Documentazione e file di lavoro non necessari a runtime.
+CHECALDO-PROGETTO.md
+CLAUDE.md
+modifiche.md
+moduli/
+
+# IDE / OS.
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Test fixtures locali (i .sintetico.csv sono in packages/**/fixtures/ e servono
+# solo al generatore/seed — non al runtime del web).

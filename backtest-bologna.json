@@ -1,0 +1,243 @@
+{
+ "citta": "BOLOGNA",
+ "periodo": {
+  "dal": "2025-06-01",
+  "al": "2025-09-15"
+ },
+ "perOrizzonte": {
+  "h24": {
+   "giorni": 70,
+   "esatti": 0.743,
+   "entroUnLivello": 0.929,
+   "sottostime": 0.043,
+   "divergenze": [
+    {
+     "data": "2025-06-07",
+     "stima": 2,
+     "ufficiale": 1,
+     "delta": 1,
+     "tempApparenteMax": 35.0
+    },
+    {
+     "data": "2025-06-16",
+     "stima": 0,
+     "ufficiale": 1,
+     "delta": -1,
+     "tempApparenteMax": 30.3
+    },
+    {
+     "data": "2025-06-19",
+     "stima": 2,
+     "ufficiale": 0,
+     "delta": 2,
+     "tempApparenteMax": 35.1
+    },
+    {
+     "data": "2025-06-20",
+     "stima": 2,
+     "ufficiale": 1,
+     "delta": 1,
+     "tempApparenteMax": 35.2
+    },
+    {
+     "data": "2025-06-23",
+     "stima": 3,
+     "ufficiale": 1,
+     "delta": 2,
+     "tempApparenteMax": 36.9
+    },
+    {
+     "data": "2025-06-25",
+     "stima": 3,
+     "ufficiale": 2,
+     "delta": 1,
+     "tempApparenteMax": 39.0
+    },
+    {
+     "data": "2025-06-27",
+     "stima": 2,
+     "ufficiale": 3,
+     "delta": -1,
+     "tempApparenteMax": 36.0
+    },
+    {
+     "data": "2025-07-01",
+     "stima": 2,
+     "ufficiale": 3,
+     "delta": -1,
+     "tempApparenteMax": 36.0
+    },
+    {
+     "data": "2025-07-07",
+     "stima": 1,
+     "ufficiale": 0,
+     "delta": 1,
+     "tempApparenteMax": 33.7
+    },
+    {
+     "data": "2025-07-14",
+     "stima": 1,
+     "ufficiale": 0,
+     "delta": 1,
+     "tempApparenteMax": 33.9
+    },
+    {
+     "data": "2025-07-15",
+     "stima": 3,
+     "ufficiale": 1,
+     "delta": 2,
+     "tempApparenteMax": 37.2
+    },
+    {
+     "data": "2025-07-16",
+     "stima": 2,
+     "ufficiale": 1,
+     "delta": 1,
+     "tempApparenteMax": 35.4
+    },
+    {
+     "data": "2025-07-17",
+     "stima": 1,
+     "ufficiale": 0,
+     "delta": 1,
+     "tempApparenteMax": 33.1
+    },
+    {
+     "data": "2025-07-18",
+     "stima": 1,
+     "ufficiale": 0,
+     "delta": 1,
+     "tempApparenteMax": 34.2
+    },
+    {
+     "data": "2025-07-23",
+     "stima": 2,
+     "ufficiale": 1,
+     "delta": 1,
+     "tempApparenteMax": 35.8
+    },
+    {
+     "data": "2025-08-08",
+     "stima": 3,
+     "ufficiale": 1,
+     "delta": 2,
+     "tempApparenteMax": 36.7
+    },
+    {
+     "data": "2025-08-18",
+     "stima": 1,
+     "ufficiale": 0,
+     "delta": 1,
+     "tempApparenteMax": 33.3
+    },
+    {
+     "data": "2025-08-19",
+     "stima": 2,
+     "ufficiale": 0,
+     "delta": 2,
+     "tempApparenteMax": 35.5
+    }
+   ]
+  },
+  "h48": {
+   "giorni": 15,
+   "esatti": 0.733,
+   "entroUnLivello": 0.933,
+   "sottostime": 0.067,
+   "divergenze": [
+    {
+     "data": "2025-06-14",
+     "stima": 3,
+     "ufficiale": 2,
+     "delta": 1,
+     "tempApparenteMax": 38.1
+    },
+    {
+     "data": "2025-07-05",
+     "stima": 1,
+     "ufficiale": 3,
+     "delta": -2,
+     "tempApparenteMax": 33.5
+    },
+    {
+     "data": "2025-07-19",
+     "stima": 2,
+     "ufficiale": 1,
+     "delta": 1,
+     "tempApparenteMax": 35.2
+    },
+    {
+     "data": "2025-08-09",
+     "stima": 3,
+     "ufficiale": 2,
+     "delta": 1,
+     "tempApparenteMax": 38.9
+    }
+   ]
+  },
+  "h72": {
+   "giorni": 14,
+   "esatti": 0.643,
+   "entroUnLivello": 0.857,
+   "sottostime": 0.071,
+   "divergenze": [
+    {
+     "data": "2025-06-22",
+     "stima": 1,
+     "ufficiale": 0,
+     "delta": 1,
+     "tempApparenteMax": 33.0
+    },
+    {
+     "data": "2025-07-06",
+     "stima": 1,
+     "ufficiale": 3,
+     "delta": -2,
+     "tempApparenteMax": 33.9
+    },
+    {
+     "data": "2025-07-13",
+     "stima": 1,
+     "ufficiale": 0,
+     "delta": 1,
+     "tempApparenteMax": 33.0
+    },
+    {
+     "data": "2025-07-20",
+     "stima": 3,
+     "ufficiale": 1,
+     "delta": 2,
+     "tempApparenteMax": 36.9
+    },
+    {
+     "data": "2025-08-10",
+     "stima": 3,
+     "ufficiale": 2,
+     "delta": 1,
+     "tempApparenteMax": 39.0
+    }
+   ]
+  }
+ },
+ "anticipoLivello3": {
+  "giorniDiTransizione": 2,
+  "vistiInAnticipo": 2,
+  "mancati": 0,
+  "quotaVisti": 1.0,
+  "dettaglio": [
+   {
+    "data": "2025-06-26",
+    "stimaLivello": 3,
+    "tempApparenteMax": 40.7,
+    "stato": "visto"
+   },
+   {
+    "data": "2025-08-11",
+    "stimaLivello": 3,
+    "tempApparenteMax": 37.2,
+    "stato": "visto"
+   }
+  ],
+  "assunzione": "criterio percentile su temperatura osservata (proxy della previsione meteo perfetta). L'errore reale a 48h include l'errore delle forecast di allora, che non è misurabile qui."
+ }
+}

@@ -1,0 +1,129 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# publiccode.yml — metadati per Developers Italia
+# Schema: https://docs.italia.it/italia/developers-italia/publiccodeyml-en/
+# Versione schema: 0.4
+
+publiccodeYmlVersion: "0.4"
+
+name: CheCaldo!
+url: "https://github.com/diegoaneli/checaldo"
+softwareVersion: "0.1.0"
+releaseDate: "2026-08-14"
+logo: ""
+
+platforms:
+  - web
+
+categories:
+  - civic-tech
+  - it-social-services
+  - emergency-management
+
+developmentStatus: beta
+softwareType: standalone/web
+
+description:
+  it:
+    localisedName: "CheCaldo!"
+    genericName: "Prioritizzazione di contatti in ondata di calore"
+    shortDescription: >-
+      Ogni mattina d'estate risponde a una domanda: durante un'ondata di
+      calore, chi contattare per primo tra gli assistiti anziani.
+    longDescription: |
+      CheCaldo! è un'applicazione web self-hosted per organizzazioni
+      (Comuni, ASL, associazioni di volontariato) che gestiscono liste di
+      persone anziane o fragili e devono decidere l'ordine di contatto
+      durante le ondate di calore.
+
+      Incrocia tre fonti pubbliche:
+
+      - il livello di allerta del giorno (bollettino del Ministero della
+        Salute via onData per le 27 città coperte; stima basata su
+        Open-Meteo e climatologia locale per tutti gli altri comuni);
+      - il profilo strutturale del quartiere ricavato dalle Basi
+        territoriali ISTAT 2021 (persone per famiglia, densità edilizia,
+        distanza dai parchi urbani);
+      - la lista degli assistiti che l'organizzazione carica dalla
+        propria anagrafe (import CSV/Excel con adattatore di colonne).
+
+      Un'organizzazione serve un comune. Una stessa istanza può
+      ospitare più organizzazioni, ciascuna titolare dei propri dati
+      e isolata dalle altre a livello di schema e di query. L'app
+      include una pagina pubblica informativa (con mappa, livello di
+      allerta e consigli sui punti freschi vicini), una dashboard
+      riservata al coordinatore, e una vista mobile per il volontario
+      in giro.
+
+      Non sostituisce i canali istituzionali di soccorso e
+      segnalazione: a Parma esiste il Piano Caldo del Comune con
+      segreteria h24 (0521.218444), attivo fino al 15 settembre.
+
+      Il motore di punteggio, il poller del bollettino, il calcolo delle
+      distanze e le motivazioni per gli assegnati sono
+      **deterministici** — niente modelli di linguaggio dove
+      l'affidabilità conta. L'LLM interviene solo su tre blocchi di
+      testo, tutti con fallback: due sulla pagina pubblica (consulente
+      del quartiere, frase sull'allerta della città) e uno sulla
+      dashboard del coordinatore (riassunto della giornata).
+    features:
+      - "Motore di punteggio deterministico su ranghi percentili"
+      - "Livello di allerta ufficiale (bollettino ministeriale) o stimato"
+      - "Backtest del metodo di stima misurato per orizzonte (24/48/72h)"
+      - "Coropleta della città a livello di sezione ISTAT (vector tiles PostGIS)"
+      - "Punti freschi mappati (biblioteche, farmacie, casette Iren, fontanelle, parchi)"
+      - "Vista volontario mobile con script ed escalation"
+      - "Dashboard coordinatore con classifica, coda sintomi, banda soglia"
+      - "Adattatore di colonne CSV/Excel per l'import dell'anagrafe da riga di comando"
+      - "Senza JavaScript restano leggibili livello di allerta, raccomandazioni, profilo del quartiere e testo dell'agente; mappa e elenco filtrabile dei punti freschi richiedono JS"
+      - "Contrasto WCAG AA verificato, area toccabile ≥44 px (WCAG 2.5.5), markup semantico con aria-label e sr-only per etichette non visive"
+
+legal:
+  license: AGPL-3.0-or-later
+  mainCopyrightOwner: "Diego Aneli"
+  repoOwner: "Diego Aneli"
+
+maintenance:
+  type: community
+  contacts:
+    - name: "Diego Aneli"
+      email: "info@checaldo.it"
+
+localisation:
+  localisationReady: false
+  availableLanguages:
+    - it
+
+dependsOn:
+  open:
+    - name: "PostgreSQL"
+      versionMin: "16"
+    - name: "PostGIS"
+      versionMin: "3.4"
+    - name: "Docker"
+    - name: "Node.js"
+      versionMin: "22"
+
+it:
+  countryExtensionVersion: "1.0"
+  conforme:
+    lineeGuidaDesign: false
+    modelloInteroperabilita: false
+    misureMinimeSicurezza: false
+    # Autocertificazione non sostenuta da un'analisi formale: si rivede
+    # quando ci sarà. Il codice ha separazione di schema fra `riservato`
+    # e `pubblico`, isolamento per `organizzazione_id` e minimizzazione
+    # dei dati mostrati (telefono mascherato, indirizzo rivelato solo
+    # per la visita). Cancellazione, informativa e base giuridica non
+    # sono state verificate: questo progetto non firma cose non
+    # verificate.
+    gdpr: false
+  piattaforme:
+    spid: false
+    cie: false
+    anpr: false
+    pagopa: false
+    io: false
+    notifiche: false
+  riuso:
+    codiceIPA: ""

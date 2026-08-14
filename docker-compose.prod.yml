@@ -1,0 +1,201 @@
+# docker-compose.prod.yml — configurazione di produzione (VPS).
+#
+# Diverso da docker-compose.yml (che è per lo sviluppo locale):
+#   - postgis: password da env, NO port publish (solo rete Docker interna);
+#   - web: build + start (next build + next start), NO volumi bind sul
+#     codice, NO ports publish (dietro Caddy);
+#   - caddy: davanti a tutto, espone 80 e 443 con HTTPS Let's Encrypt
+#     automatico. Dominio da variabile DOMINIO nel .env.
+#   - worker: cron interno per il poller allerta.py (MOD07 §7 Deploy);
+#     alternativa al crontab di sistema — vedi commento sotto.
+#
+# Uso:
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+services:
+
+  postgis:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    # §12yyyy — TZ Europe/Rome (opzione A di §12vvvv). L'env `TZ` da
+    # sola non basta su un volume già inizializzato: postgres scrive
+    # `timezone = 'UTC'` in `postgresql.conf` al primo initdb e non lo
+    # rilegge dall'env ai restart successivi. `-c timezone=... -c
+    # log_timezone=...` sovrascrive postgresql.conf al server start,
+    # funziona su cluster fresco E su volume esistente. Verifica:
+    # `SHOW timezone` deve rispondere `Europe/Rome`.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: Europe/Rome
+    command:
+      - postgres
+      - -c
+      - timezone=Europe/Rome
+      - -c
+      - log_timezone=Europe/Rome
+    # NIENTE `ports:` — il DB è raggiungibile solo dai container sulla stessa
+    # rete Docker (web, worker, ingest). Non esporlo su Internet.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./packages/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./packages/db/seed-organizzazione.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      retries: 12
+
+  # Web: immagine autoconsistente (§12xxxx). `docker/web.Dockerfile`
+  # multi-stage: base → deps (pnpm install) → builder (codegen prompt +
+  # next build con output: standalone) → runner (Node + standalone +
+  # .next/static + public). `docker compose up --build` produce l'immagine
+  # completa; a runtime il container esegue `node apps/web/server.js`
+  # (CMD nel Dockerfile) senza pnpm, senza tsx, senza sorgente.
+  # Immagine finale ~300-400 MB. Prima di §12xxxx (Dockerfile Node vuoto +
+  # bind mount della sorgente): container /app vuoto, `pnpm build` cadeva.
+  # `image: checaldoapp-prod-web` esplicito (§12bbbbbb). Vedi §12hhhhh per
+  # l'incidente: senza `image:` il tag derivato era `checaldoapp-web`, in
+  # collisione con il servizio `web` della compose di sviluppo che invece
+  # va a `docker/node.Dockerfile`. Nomi distinti impediscono la
+  # sovrascrittura.
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: runner
+    image: checaldoapp-prod-web
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgis:5432/${POSTGRES_DB}
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      TZ: Europe/Rome
+      # NODE_ENV esplicito (§12bbbbbb). Il valore è già baked
+      # nell'immagine da `docker/web.Dockerfile:109` target runner —
+      # questa riga dichiara la stessa intenzione anche a livello di
+      # compose, così chi legge il file di produzione sa in che modalità
+      # gira senza dover aprire il Dockerfile. Compose ha precedenza
+      # sull'immagine: coerenza garantita.
+      NODE_ENV: production
+      # §12ggggg — TTS interno. Se assente o 5xx, il web ritorna 503
+      # dal /api/tts/* e il client cade sul fallback Web Speech
+      # (§12fffff): la voce non sparisce.
+      TTS_URL: http://tts:8080
+    # NIENTE `ports:` — solo Caddy espone 443/80. Web è raggiungibile da
+    # Caddy via rete Docker interna sulla porta 3000.
+    # NIENTE volumi: l'immagine è autoconsistente. I named volumes
+    # `nm_prod_*` e `pnpm_prod_store` sono stati rimossi in §12xxxx.
+    depends_on:
+      postgis: { condition: service_healthy }
+      tts: { condition: service_healthy }
+
+  # §12ggggg — Servizio TTS Piper. Modello it_IT-paola-medium (61 MB,
+  # CC0-1.0) baked nell'immagine al build; caricato una volta al boot
+  # del container (~30-60 s), poi ogni sintesi costa ~0.5-2 s. NON
+  # esposto all'esterno — solo la rete Docker interna raggiunge :8080;
+  # il web lo chiama via `http://tts:8080/synth`. Il web ha
+  # `depends_on tts service_healthy` così Caddy non instrada verso una
+  # pagina che darebbe 503 dal /api/tts/* prima che la voce sia carica.
+  # Se il servizio muore o si arresta (es. OOM), il web risponde 503
+  # e il client cade sul fallback Web Speech API — la voce non sparisce.
+  tts:
+    build:
+      context: .
+      dockerfile: docker/tts.Dockerfile
+    image: checaldoapp-prod-tts
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Rome
+    # NIENTE `ports:` — servizio interno.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sfS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 6
+
+  # Caddy davanti a tutto. TLS automatico (Let's Encrypt HTTP-01), rinnovo
+  # automatico. Dominio da env DOMINIO — funziona con qualunque record A/AAAA
+  # che punti al VPS, inclusi sottodomini DuckDNS. Nessun controllo di
+  # accesso: l'istanza dimostrativa è aperta per scelta (vedi Caddyfile).
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"     # Let's Encrypt HTTP-01 challenge + redirect a 443
+      - "443:443"   # HTTPS pubblico
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data     # certificati Let's Encrypt (persistente!)
+      - caddy_config:/config
+    depends_on:
+      - web
+
+  # Ingest: rimasto come one-shot per lanci manuali (backtest,
+  # rigenerazione dati). NON gira in continuo.
+  ingest:
+    build:
+      context: .
+      dockerfile: docker/ingest.Dockerfile
+    image: checaldoapp-prod-ingest
+    profiles: ["oneshot"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgis:5432/${POSTGRES_DB}
+      TZ: Europe/Rome
+    volumes:
+      - .:/app
+    depends_on:
+      postgis: { condition: service_healthy }
+
+  # Node one-shot per il cron di generazione del giro
+  # (`packages/db/scripts/genera-giri.ts`) e per eventuali comandi
+  # manuali (test, typecheck). NON gira in continuo: ogni `run --rm`
+  # crea e distrugge un container.
+  #
+  # §12xxxx — passato a immagine autoconsistente. Riusa
+  # `docker/web.Dockerfile` target `cron`, che parte dallo stage `builder`
+  # con tutti i workspace deps installati (tsx incluso). Rispetto alla
+  # versione §12wwww (bind `.:/app` + volumi `nm_prod_*` + `pnpm install`
+  # una tantum sull'host), qui l'immagine porta dentro sorgente e
+  # node_modules: chi clona può eseguire il cron del giro subito dopo
+  # `docker compose up --build`, senza passi manuali. Immagine più grossa
+  # del runner web (~800 MB perché contiene devDependencies), ma vive
+  # solo su invocazione `run --rm` — nessun container acceso in permanenza.
+  node:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: cron
+    image: checaldoapp-prod-node
+    profiles: ["oneshot"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgis:5432/${POSTGRES_DB}
+      TZ: Europe/Rome
+      # NODE_ENV esplicito (§12bbbbbb). Analogo alla riga sul servizio `web`
+      # sopra — il valore è baked in `docker/web.Dockerfile:132` target cron,
+      # qui è dichiarato anche a livello di compose per coerenza.
+      NODE_ENV: production
+    # NIENTE volumi: sorgente + node_modules sono nell'immagine.
+    depends_on:
+      postgis: { condition: service_healthy }
+
+  # Worker: NON incluso qui.
+  # Il cron del poller allerta.py gira dal crontab dell'utente sul VPS,
+  # non da container-nodecron sempre acceso. Righe crontab e motivo
+  # degli orari: moduli/MOD07-checklist-deploy.md punto 21.
+  # Alternative scartate: moduli/MOD07-consegna.md "Alternative scartate".
+
+volumes:
+  pgdata:
+  # I named volumes nm_prod_*, pnpm_prod_store sono stati rimossi in
+  # §12xxxx quando web e node sono passati a immagini autoconsistenti:
+  # non li monta più nessuno, non serve dichiararli.
+  caddy_data:
+  caddy_config:
