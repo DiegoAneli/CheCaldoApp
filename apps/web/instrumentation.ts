@@ -7,7 +7,7 @@
  * primo login utente.
  *
  * **Guard APP_URL in produzione.** Le rotte di login e logout
- * (`apps/web/app/[comune]/entra*/route.ts` e
+* (le rotte `entra` e `entra-coordinatore` sotto `[comune]` e
  * `apps/web/app/logout/route.ts`) costruiscono i redirect con
  * `process.env.APP_URL ?? "http://localhost:3000"`. In produzione il
  * fallback silenzioso è dannoso: il browser dell'utente finirebbe su
